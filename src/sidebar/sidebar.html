@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 13px; padding: 12px; }
+    label { display: block; font-weight: bold; margin-top: 10px; margin-bottom: 3px; }
+    select, input { width: 100%; padding: 6px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 3px; }
+    button { width: 100%; margin-top: 14px; padding: 10px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    #status { margin-top: 10px; color: #555; font-size: 12px; min-height: 16px; }
+    #cost { margin-top: 8px; padding: 8px; background: #f0f7ff; border-radius: 4px; font-size: 12px; display: none; }
+    .error { color: #d32f2f; }
+  </style>
+</head>
+<body>
+  <h3 style="margin-top:0">LOR Generator</h3>
+
+  <label>LOR Type</label>
+  <select id="lorType">
+    <option value="EB1A">EB-1A — Extraordinary Ability</option>
+    <option value="NIW">EB-2 NIW — National Interest Waiver</option>
+    <option value="O1A">O-1A — Extraordinary Ability (Temp)</option>
+  </select>
+
+  <label>Customer Google Doc URL</label>
+  <input type="url" id="customerDocUrl" placeholder="https://docs.google.com/document/d/...">
+
+  <label>Recommender Name</label>
+  <input type="text" id="recommenderName" placeholder="Dr. Jane Smith">
+
+  <label>Recommender Title</label>
+  <input type="text" id="recommenderTitle" placeholder="Professor of Computer Science">
+
+  <label>Recommender Organization</label>
+  <input type="text" id="recommenderOrg" placeholder="MIT">
+
+  <button id="generateBtn" onclick="generate()">Generate Letter</button>
+
+  <div id="status"></div>
+  <div id="cost"></div>
+
+  <script>
+    function generate() {
+      const btn = document.getElementById("generateBtn");
+      const status = document.getElementById("status");
+      const costDiv = document.getElementById("cost");
+
+      const formData = {
+        lorType: document.getElementById("lorType").value,
+        customerDocUrl: document.getElementById("customerDocUrl").value.trim(),
+        recommenderName: document.getElementById("recommenderName").value.trim(),
+        recommenderTitle: document.getElementById("recommenderTitle").value.trim(),
+        recommenderOrg: document.getElementById("recommenderOrg").value.trim(),
+      };
+
+      if (!formData.customerDocUrl || !formData.recommenderName) {
+        status.innerHTML = '<span class="error">Please fill all fields.</span>';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Generating...";
+      status.textContent = "Calling AI model... this takes ~20 seconds.";
+      costDiv.style.display = "none";
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          btn.disabled = false;
+          btn.textContent = "Generate Letter";
+          status.textContent = "✓ Draft inserted at end of document.";
+          costDiv.style.display = "block";
+          costDiv.innerHTML =
+            "Tokens: " + result.inputTokens + " in / " + result.outputTokens + " out<br>" +
+            "Cost: $" + result.costUsd.toFixed(4);
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = "Generate Letter";
+          status.innerHTML = '<span class="error">Error: ' + err.message + '</span>';
+        })
+        .generateLOR(formData);
+    }
+  </script>
+</body>
+</html>
