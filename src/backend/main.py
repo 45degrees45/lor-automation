@@ -72,3 +72,22 @@ def generate(req: GenerateRequest):
         output_tokens=result["output_tokens"],
         cost_usd=cost,
     )
+
+
+@app.post("/feedback")
+def trigger_feedback():
+    from feedback import run_weekly_feedback
+    result = run_weekly_feedback(db)
+    return result
+
+
+class ImportRequest(BaseModel):
+    doc_url: str
+    field: str = "General"
+
+
+@app.post("/import")
+def import_doc(req: ImportRequest):
+    from importer import import_document
+    result = import_document(req.doc_url, db, field=req.field)
+    return result
