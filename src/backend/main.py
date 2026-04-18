@@ -38,35 +38,33 @@ def generate(req: GenerateRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Cannot read customer doc: {e}")
 
-    rag_examples = retrieve_examples(query=customer_profile[:500], lor_type=req.lor_type, n=3)
-    writing_rules = get_rules(db, req.lor_type)
+    try:
+        rag_examples = retrieve_examples(query=customer_profile[:500], lor_type=req.lor_type, n=3)
+        writing_rules = get_rules(db, req.lor_type)
 
-    result = generate_lor(
-        lor_type=req.lor_type,
-        customer_profile=customer_profile,
-        rag_examples=rag_examples,
-        writing_rules=writing_rules,
-        recommender_name=req.recommender_name,
-        recommender_title=req.recommender_title,
-        recommender_org=req.recommender_org,
-    )
+        result = generate_lor(
+            lor_type=req.lor_type,
+            customer_profile=customer_profile,
+            rag_examples=rag_examples,
+            writing_rules=writing_rules,
+            recommender_name=req.recommender_name,
+            recommender_title=req.recommender_title,
+            recommender_org=req.recommender_org,
+        )
 
-    log_usage(
-        db=db,
-        employee_email=req.employee_email,
-        doc_id=doc_id,
-        lor_type=req.lor_type,
-        input_tokens=result["input_tokens"],
-        output_tokens=result["output_tokens"],
-        model_id=os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-6-20250630-v1:0"),
-    )
-
-    from config.pricing import calculate_cost
-    cost = calculate_cost(
-        os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-6-20250630-v1:0"),
-        result["input_tokens"],
-        result["output_tokens"]
-    )
+        cost = log_usage(
+            db=db,
+            employee_email=req.employee_email,
+            doc_id=doc_id,
+            lor_type=req.lor_type,
+            input_tokens=result["input_tokens"],
+            output_tokens=result["output_tokens"],
+            model_id=os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-6-20250630-v1:0"),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Generation failed: {e}")
 
     return GenerateResponse(
         text=result["text"],

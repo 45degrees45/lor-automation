@@ -11,7 +11,7 @@ def log_usage(
     input_tokens: int,
     output_tokens: int,
     model_id: str,
-) -> None:
+) -> float:
     cost = calculate_cost(model_id, input_tokens, output_tokens)
     db.collection(FIRESTORE_TOKEN_LOGS).add({
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -23,3 +23,4 @@ def log_usage(
         "cost_usd": cost,
         "model_id": model_id,
     })
+    return cost

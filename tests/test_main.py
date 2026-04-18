@@ -98,7 +98,7 @@ def mocks():
         }),
         "retrieve_examples": MagicMock(return_value=["example 1", "example 2"]),
         "get_rules": MagicMock(return_value=["Rule A", "Rule B"]),
-        "log_usage": MagicMock(),
+        "log_usage": MagicMock(return_value=0.0105),
         "read_doc_text": MagicMock(return_value="Customer profile text."),
         "extract_doc_id": MagicMock(return_value="DOC_ID_123"),
     }
@@ -194,3 +194,9 @@ class TestGenerateEndpoint:
         payload = {k: v for k, v in VALID_PAYLOAD.items() if k != "employee_email"}
         response = client.post("/generate", json=payload)
         assert response.status_code == 422
+
+    def test_generate_pipeline_failure_returns_502(self, client, mocks):
+        mocks["generate_lor"].side_effect = RuntimeError("Bedrock timeout")
+        response = client.post("/generate", json=VALID_PAYLOAD)
+        assert response.status_code == 502
+        assert "Generation failed" in response.json()["detail"]

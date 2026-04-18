@@ -12,7 +12,7 @@ def test_log_usage_writes_correct_fields():
     mock_db.collection.return_value = mock_collection
 
     from tracker import log_usage
-    log_usage(
+    returned_cost = log_usage(
         db=mock_db,
         employee_email="emp@co.com",
         doc_id="doc123",
@@ -22,6 +22,7 @@ def test_log_usage_writes_correct_fields():
         model_id="us.anthropic.claude-sonnet-4-6-20250630-v1:0"
     )
 
+    assert returned_cost == pytest.approx(0.010500, rel=1e-3)
     mock_collection.add.assert_called_once()
     call_args = mock_collection.add.call_args[0][0]
     assert call_args["employee_email"] == "emp@co.com"
