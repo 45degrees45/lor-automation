@@ -126,6 +126,128 @@ APPROVAL_CHECKLIST = [
     "No invented facts — everything traceable to the customer intake doc",
 ]
 
+PROJECT_RESOURCES = [
+    # category, resource, purpose, details, monthly_cost
+    ("GCP — Infrastructure", "Cloud Run",
+     "Hosts the FastAPI backend",
+     "Service: lor-backend | Region: asia-south1 | 1GB RAM, 1 CPU, 120s timeout",
+     "~$0 (free tier for low volume)"),
+
+    ("GCP — Infrastructure", "Cloud Scheduler",
+     "Triggers weekly feedback ingestion job",
+     "Job: lor-weekly-feedback | Every Monday 9:00 AM IST | POST /feedback",
+     "~$0 (free tier: 3 jobs free)"),
+
+    ("GCP — Storage", "Firestore",
+     "Stores token logs, writing rules, doc registry",
+     "Collections: token_logs, writing_rules, doc_registry | DB: (default)",
+     "~$0 (free tier: 1GB, 50k reads/day)"),
+
+    ("GCP — Security", "Secret Manager",
+     "Stores AWS credentials securely",
+     "Secret: aws-bedrock-credentials | Accessed by Cloud Run service account",
+     "~$0.06/month (1 secret, ~100 accesses)"),
+
+    ("GCP — Identity", "Service Account",
+     "Identity used by Cloud Run to access GCP APIs",
+     "SA: lor-backend@lor-automation.iam.gserviceaccount.com | Roles: datastore.user, secretmanager.secretAccessor, logging.logWriter",
+     "$0"),
+
+    ("GCP — Project", "GCP Project",
+     "Container for all GCP resources",
+     "Project ID: lor-automation | Billing: linked to existing billing account",
+     "$0 (project itself is free)"),
+
+    ("AWS — AI", "AWS Bedrock — Claude Sonnet 4.6",
+     "Generates LOR drafts and summarizes feedback into rules",
+     "Account: 985124898353 | Region: ap-south-1 | Model: us.anthropic.claude-sonnet-4-6-20250630-v1:0 | $3/1M input, $15/1M output tokens",
+     "~$15–25/month at 10 files/day"),
+
+    ("AWS — Security", "AWS IAM User",
+     "Grants Cloud Run access to Bedrock",
+     "User: claude-code-admin | Policy: AmazonBedrockFullAccess | Key stored in GCP Secret Manager",
+     "$0"),
+
+    ("Google — Workspace", "Google Docs API",
+     "Reads customer profile docs and team lead comments",
+     "Scopes: documents.readonly, drive.readonly | Used by: gdocs.py",
+     "$0 (free)"),
+
+    ("Google — Workspace", "Google Sheets API",
+     "Populates reference sheet and cost dashboard",
+     "Scopes: spreadsheets, drive | Used by: create_reference_sheet.py | Sheet ID: 1v2Kpze5ziDHB82Yl8DwlFE83DDtC3oScp3NTY26GVzA",
+     "$0 (free)"),
+
+    ("Google — Workspace", "Google Apps Script Add-on",
+     "Employee sidebar inside Google Docs",
+     "Files: Code.gs, sidebar.html, appsscript.json | Deployed as Google Workspace Add-on",
+     "$0 (free)"),
+
+    ("Vector DB", "ChromaDB",
+     "Stores approved LOR letter embeddings for RAG retrieval",
+     "Self-hosted on Cloud Run | Persisted to /data/chroma volume | Collection: approved_letters",
+     "$0 (self-hosted)"),
+
+    ("Python Package", "FastAPI + Uvicorn",
+     "Web framework for Cloud Run backend",
+     "fastapi==0.111.0, uvicorn==0.30.1 | Serves /health, /generate, /feedback, /import",
+     "$0"),
+
+    ("Python Package", "boto3",
+     "AWS SDK — calls Bedrock Claude",
+     "boto3==1.34.100 | Used by: aws_auth.py, generator.py, importer.py",
+     "$0"),
+
+    ("Python Package", "google-cloud-firestore",
+     "Firestore client for token logs and writing rules",
+     "google-cloud-firestore==2.16.0 | Used by: tracker.py, rules.py, feedback.py",
+     "$0"),
+
+    ("Python Package", "google-cloud-secret-manager",
+     "Fetches AWS credentials at runtime",
+     "google-cloud-secret-manager==2.20.0 | Used by: aws_auth.py",
+     "$0"),
+
+    ("Python Package", "google-api-python-client",
+     "Google Docs + Sheets API client",
+     "google-api-python-client==2.129.0 | Used by: gdocs.py, create_reference_sheet.py",
+     "$0"),
+
+    ("Python Package", "chromadb",
+     "Vector database client",
+     "chromadb==0.5.0 | Used by: rag.py",
+     "$0"),
+
+    ("Python Package", "pydantic",
+     "Request/response validation in FastAPI",
+     "pydantic==2.7.1 | Used by: main.py",
+     "$0"),
+
+    ("Script", "scripts/setup_gcp.sh",
+     "One-time GCP project setup",
+     "Creates project, enables APIs, creates service account, creates Firestore DB",
+     "$0"),
+
+    ("Script", "scripts/deploy.sh",
+     "Deploys backend to Cloud Run + creates Cloud Scheduler job",
+     "Run after any backend change to redeploy",
+     "$0"),
+
+    ("Script", "scripts/bulk_import.py",
+     "One-time bootstrap of ChromaDB from existing approved LOR docs",
+     "Run: python scripts/bulk_import.py --docs-list docs/historical_doc_urls.txt",
+     "$0 + Bedrock cost per doc"),
+
+    ("Script", "scripts/create_reference_sheet.py",
+     "Populates this Google Sheet with all writing guidelines",
+     "Run: SHEET_ID=... GOOGLE_APPLICATION_CREDENTIALS=... python scripts/create_reference_sheet.py",
+     "$0"),
+
+    ("Cost Summary", "Total Estimated Monthly Cost", "",
+     "10 files/day × 3 generations avg = ~900 generations/month",
+     "~$15–25/month (within $33 AWS cap)"),
+]
+
 # ── Sheet builder ─────────────────────────────────────────────────────────────
 
 HEADER_COLOR = {"red": 0.13, "green": 0.34, "blue": 0.62}
@@ -245,6 +367,20 @@ def build_sheet_data():
               "Tie to healthcare, AI, infrastructure, economic security."], bg=SECTION_COLOR),
     ]
     tabs.append(("Customer Intake Guide", rows))
+
+    # ── Tab 7: Project Resources ───────────────────────────────────────────────
+    COST_COLOR = {"red": 0.85, "green": 0.95, "blue": 0.85}
+    rows = [
+        _header_row(["Category", "Resource", "Purpose", "Details", "Monthly Cost"],
+                    bg=HEADER_COLOR),
+    ]
+    current_category = None
+    for category, resource, purpose, details, cost in PROJECT_RESOURCES:
+        is_cost_row = category == "Cost Summary"
+        bg = COST_COLOR if is_cost_row else (SECTION_COLOR if category != current_category else None)
+        rows.append(_row([category, resource, purpose, details, cost], bg=bg))
+        current_category = category
+    tabs.append(("Project Resources", rows))
 
     return tabs
 
