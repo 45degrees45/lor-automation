@@ -1,16 +1,9 @@
 """Tests for main.py FastAPI endpoints."""
-import sys
 import os
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# ---------------------------------------------------------------------------
-# Ensure src/backend is on the path so relative imports in main.py work.
-# ---------------------------------------------------------------------------
-BACKEND_DIR = os.path.join(os.path.dirname(__file__), "..", "src", "backend")
-if BACKEND_DIR not in sys.path:
-    sys.path.insert(0, BACKEND_DIR)
 
 # ---------------------------------------------------------------------------
 # Stub external packages not installed in this test environment.

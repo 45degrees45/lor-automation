@@ -1,9 +1,6 @@
 import pytest
-import sys
-import os
 from unittest.mock import MagicMock, patch, call
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src/backend"))
 
 
 def _make_doc_snap(doc_url, lor_type="EB1A", field="General"):

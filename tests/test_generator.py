@@ -1,10 +1,7 @@
 import pytest
-import sys
-import os
 import json
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src/backend"))
 
 MOCK_RESPONSE = {
     "content": [{"text": "Dear Reviewer, I am writing to support..."}],
