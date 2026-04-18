@@ -25,6 +25,7 @@ function generateLOR(formData) {
     recommender_name: formData.recommenderName,
     recommender_title: formData.recommenderTitle,
     recommender_org: formData.recommenderOrg,
+    recommender_seniority: formData.recommenderSeniority,
     employee_email: employeeEmail,
   };
 

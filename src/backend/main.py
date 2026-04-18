@@ -18,6 +18,7 @@ class GenerateRequest(BaseModel):
     recommender_name: str
     recommender_title: str
     recommender_org: str
+    recommender_seniority: str = "director"  # manager|director|vp|c_level|professor|industry_expert
     employee_email: str
 
 class GenerateResponse(BaseModel):
@@ -50,6 +51,7 @@ def generate(req: GenerateRequest):
             recommender_name=req.recommender_name,
             recommender_title=req.recommender_title,
             recommender_org=req.recommender_org,
+            recommender_seniority=req.recommender_seniority,
         )
 
         cost = log_usage(

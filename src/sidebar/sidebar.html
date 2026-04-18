@@ -21,6 +21,7 @@
     <option value="EB1A">EB-1A — Extraordinary Ability</option>
     <option value="NIW">EB-2 NIW — National Interest Waiver</option>
     <option value="O1A">O-1A — Extraordinary Ability (Temp)</option>
+    <option value="OC">Original Contribution (OC) Letter</option>
   </select>
 
   <label>Customer Google Doc URL</label>
@@ -34,6 +35,16 @@
 
   <label>Recommender Organization</label>
   <input type="text" id="recommenderOrg" placeholder="MIT">
+
+  <label>Recommender Seniority</label>
+  <select id="recommenderSeniority">
+    <option value="manager">Manager / Team Lead</option>
+    <option value="director" selected>Director</option>
+    <option value="vp">VP / SVP</option>
+    <option value="c_level">C-Level (CTO / CEO / Chief Scientist)</option>
+    <option value="professor">Professor / Academic Advisor</option>
+    <option value="industry_expert">Independent Industry Expert</option>
+  </select>
 
   <button id="generateBtn" onclick="generate()">Generate Letter</button>
 
@@ -52,6 +63,7 @@
         recommenderName: document.getElementById("recommenderName").value.trim(),
         recommenderTitle: document.getElementById("recommenderTitle").value.trim(),
         recommenderOrg: document.getElementById("recommenderOrg").value.trim(),
+        recommenderSeniority: document.getElementById("recommenderSeniority").value,
       };
 
       if (!formData.customerDocUrl || !formData.recommenderName) {
